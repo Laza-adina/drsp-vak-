@@ -1,28 +1,26 @@
 /**
  * 📄 Fichier: src/features/admin/components/UserForm.tsx
- * 📝 Description: Formulaire utilisateur (création/modification)
- * 🎯 Usage: Gérer les comptes utilisateurs
+ * 📝 Description: Formulaire d'ajout/modification d'utilisateur
  */
 
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useMutation } from '@tanstack/react-query'
-import { usersService } from '@/api/services/users.service'
-import Input from '@/components/common/Input'
-import Select from '@/components/common/Select'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Button from '@/components/common/Button'
 import toast from 'react-hot-toast'
 import type { User } from '@/types/auth.types'
+import axiosInstance from '@/api/axios.config'
 
+// Schéma de validation
 const userSchema = z.object({
   nom: z.string().min(1, 'Le nom est requis'),
   prenom: z.string().min(1, 'Le prénom est requis'),
   email: z.string().email('Email invalide'),
   password: z.string().min(6, 'Minimum 6 caractères').optional().or(z.literal('')),
   role: z.string().min(1, 'Le rôle est requis'),
-  actif: z.boolean(),
+  is_active: z.boolean().optional(),
 })
 
 type UserFormData = z.infer<typeof userSchema>
@@ -30,93 +28,189 @@ type UserFormData = z.infer<typeof userSchema>
 interface UserFormProps {
   initialData?: User
   onSuccess?: () => void
+  onCancel?: () => void
 }
 
-const UserForm: React.FC<UserFormProps> = ({ initialData, onSuccess }) => {
-  const isEditMode = Boolean(initialData)
+const UserForm: React.FC<UserFormProps> = ({ initialData, onSuccess, onCancel }) => {
+  const queryClient = useQueryClient()
+  const isEditMode = !!initialData
 
-  const { register, handleSubmit, formState: { errors } } = useForm<UserFormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: initialData
-      ? {
-          nom: initialData.nom,
-          prenom: initialData.prenom,
-          email: initialData.email,
-          role: initialData.role,
-          actif: initialData.actif,
-        }
-      : { actif: true },
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (data: any) => usersService.create(data),
-    onSuccess: () => {
-      toast.success('Utilisateur créé')
-      onSuccess?.()
+    defaultValues: {
+      nom: initialData?.nom || '',
+      prenom: initialData?.prenom || '',
+      email: initialData?.email || '',
+      password: '',
+      role: initialData?.role || 'LECTEUR',
+      is_active: initialData?.is_active !== false,
     },
   })
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => usersService.update(initialData!.id, data),
+  // Service création/modification
+  const userService = {
+    create: async (data: any) => {
+      const response = await axiosInstance.post('/users', data)
+      return response.data
+    },
+    update: async (id: number, data: any) => {
+      const response = await axiosInstance.put(`/users/${id}`, data)
+      return response.data
+    }
+  }
+
+  // Mutation
+  const mutation = useMutation({
+    mutationFn: (data: UserFormData) => {
+      const payload = { ...data }
+      if (!payload.password) {
+        delete payload.password
+      }
+      
+      if (isEditMode && initialData?.id) {
+        return userService.update(initialData.id, payload)
+      }
+      return userService.create(payload)
+    },
     onSuccess: () => {
-      toast.success('Utilisateur modifié')
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      toast.success(isEditMode ? 'Utilisateur modifié' : 'Utilisateur créé')
       onSuccess?.()
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.detail || 'Erreur'
+      toast.error(message)
     },
   })
 
   const onSubmit = (data: UserFormData) => {
-    const mutation = isEditMode ? updateMutation : createMutation
-    // Ne pas envoyer le password s'il est vide en mode édition
-    const payload = { ...data }
-    if (isEditMode && !data.password) {
-      delete payload.password
-    }
-    mutation.mutate(payload)
+    mutation.mutate(data)
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="Nom" required error={errors.nom?.message} {...register('nom')} />
-        <Input label="Prénom" required error={errors.prenom?.message} {...register('prenom')} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Nom */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nom *
+          </label>
+          <input
+            type="text"
+            className={`w-full px-3 py-2 border rounded-lg ${
+              errors.nom ? 'border-red-500' : 'border-gray-300'
+            }`}
+            {...register('nom')}
+          />
+          {errors.nom && (
+            <p className="text-red-600 text-sm mt-1">{errors.nom.message}</p>
+          )}
+        </div>
+
+        {/* Prénom */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Prénom *
+          </label>
+          <input
+            type="text"
+            className={`w-full px-3 py-2 border rounded-lg ${
+              errors.prenom ? 'border-red-500' : 'border-gray-300'
+            }`}
+            {...register('prenom')}
+          />
+          {errors.prenom && (
+            <p className="text-red-600 text-sm mt-1">{errors.prenom.message}</p>
+          )}
+        </div>
       </div>
 
-      <Input label="Email" type="email" required error={errors.email?.message} {...register('email')} />
+      {/* Email */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Email *
+        </label>
+        <input
+          type="email"
+          className={`w-full px-3 py-2 border rounded-lg ${
+            errors.email ? 'border-red-500' : 'border-gray-300'
+          }`}
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
+        )}
+      </div>
 
-      <Input
-        label="Mot de passe"
-        type="password"
-        helperText={isEditMode ? 'Laisser vide pour ne pas modifier' : undefined}
-        error={errors.password?.message}
-        {...register('password')}
-      />
+      {/* Mot de passe */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Mot de passe {!isEditMode && '*'}
+          {isEditMode && <span className="text-gray-500 text-xs">(laisser vide pour ne pas modifier)</span>}
+        </label>
+        <input
+          type="password"
+          placeholder={isEditMode ? 'Laisser vide pour ne pas modifier' : 'Minimum 6 caractères'}
+          className={`w-full px-3 py-2 border rounded-lg ${
+            errors.password ? 'border-red-500' : 'border-gray-300'
+          }`}
+          {...register('password')}
+        />
+        {errors.password && (
+          <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+        )}
+      </div>
 
-      <Select
-        label="Rôle"
-        required
-        error={errors.role?.message}
-        options={[
-          { value: 'Admin', label: 'Admin' },
-          { value: 'Épidémiologiste', label: 'Épidémiologiste' },
-          { value: 'Agent de saisie', label: 'Agent de saisie' },
-          { value: 'Lecteur', label: 'Lecteur' },
-        ]}
-        {...register('role')}
-      />
+      {/* Rôle */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Rôle *
+        </label>
+        <select
+          className={`w-full px-3 py-2 border rounded-lg ${
+            errors.role ? 'border-red-500' : 'border-gray-300'
+          }`}
+          {...register('role')}
+        >
+          <option value="">Sélectionner un rôle</option>
+          <option value="ADMINISTRATEUR">Administrateur</option>
+          <option value="EPIDEMIOLOGISTE">Épidémiologiste</option>
+          <option value="AGENT_SAISIE">Agent de saisie</option>
+          <option value="LECTEUR">Lecteur</option>
+        </select>
+        {errors.role && (
+          <p className="text-red-600 text-sm mt-1">{errors.role.message}</p>
+        )}
+      </div>
 
-      <label className="flex items-center">
-        <input type="checkbox" className="mr-2" {...register('actif')} />
-        <span className="text-sm text-gray-700">Compte actif</span>
-      </label>
+      {/* Actif */}
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          id="is_active"
+          className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+          {...register('is_active')}
+        />
+        <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
+          Compte actif
+        </label>
+      </div>
 
-      <Button
-        type="submit"
-        variant="primary"
-        fullWidth
-        loading={createMutation.isPending || updateMutation.isPending}
-      >
-        {isEditMode ? 'Mettre à jour' : 'Créer'}
-      </Button>
+      {/* Boutons */}
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" variant="primary" loading={mutation.isPending}>
+          {isEditMode ? 'Modifier' : 'Créer'}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Annuler
+          </Button>
+        )}
+      </div>
     </form>
   )
 }

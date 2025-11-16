@@ -29,7 +29,7 @@ import AdminPage from '@/features/admin/pages/AdminPage'
 // 📂 IMPORTS LAYOUT & ROUTES
 // ========================================
 import Layout from '@/components/layout/Layout'
-import { ProtectedRoute, RoleBasedRoute } from '@/routes'
+import { ProtectedRoute } from '@/routes'
 
 // ========================================
 // 🚀 COMPOSANT APP
@@ -112,10 +112,13 @@ function App() {
           <Route path="/rapports" element={<RapportsPage />} />
 
           {/* ==================== ROUTES ADMIN ==================== */}
-          {/* Accessible uniquement aux Admins */}
-          <Route element={<RoleBasedRoute allowedRoles={['Admin']} />}>
+          {/* ✅ SANS PROTECTION - Pour tester/développer */}
+          <Route path="/admin" element={<AdminPage />} />
+
+          {/* ⚠️ TODO: Ajouter la protection plus tard */}
+          {/* <Route element={<RoleBasedRoute allowedRoles={['administrateur']} />}>
             <Route path="/admin" element={<AdminPage />} />
-          </Route>
+          </Route> */}
 
         </Route>
       </Route>

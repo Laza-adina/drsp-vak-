@@ -54,47 +54,38 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """
-    🔐 Connexion et génération du token JWT
-    
-    Vérifie les identifiants (email/password), contrôle que le compte
-    est actif, puis génère un token JWT valide.
-    """
-    # Récupérer l'utilisateur par email
+    """🔐 Connexion"""
     user = db.query(User).filter(User.email == form_data.username).first()
     
-    # Vérifier les identifiants
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou mot de passe incorrect",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=401, detail="Identifiants incorrects")
     
-    # Vérifier si l'utilisateur est actif
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Compte utilisateur désactivé"
-        )
+        raise HTTPException(status_code=403, detail="Compte désactivé")
     
-    # Mettre à jour la date de dernière connexion
     user.last_login = datetime.utcnow()
     db.commit()
     
-    # Créer le token JWT avec durée de validité
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": str(user.id)})
     
+    # ✅ AJOUTER L'UTILISATEUR DANS LA RÉPONSE
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "nom": user.nom,
+            "prenom": user.prenom,
+            "email": user.email,
+            "role": str(user.role.value) if hasattr(user.role, 'value') else str(user.role),
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "actif": user.is_active
+        }
     }

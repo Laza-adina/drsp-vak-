@@ -1,165 +1,140 @@
 /**
  * 📄 Fichier: src/features/cas/components/CasList.tsx
- * 📝 Description: Liste des cas en tableau
- * 🎯 Usage: Afficher les cas avec actions (voir, modifier, supprimer)
+ * 📝 Description: Tableau de liste des cas
+ * 🎯 Usage: Afficher tous les cas avec actions
  */
 
 import React from 'react'
-import { Eye, Edit, Trash2 } from 'lucide-react'
-import { formatDate } from '@/utils/formatters'
-import { getStatusColor } from '@/utils/helpers'
+import { Edit2, Trash2, Eye } from 'lucide-react'
+import { CasStatutLabels } from '@/types/referentiels.types'
+import Button from '@/components/common/Button'
 import type { Cas } from '@/types/cas.types'
-
-// ========================================
-// 🎨 INTERFACE
-// ========================================
 
 interface CasListProps {
   cas: Cas[]
-  onView: (id: number) => void
-  onEdit: (id: number) => void
+  onView?: (id: number) => void
+  onEdit?: (id: number) => void
   onDelete?: (id: number) => void
 }
 
-// ========================================
-// 📋 COMPOSANT CAS LIST
-// ========================================
-
 /**
- * Tableau des cas avec actions
+ * Tableau de liste des cas
+ * Affiche les informations principales avec actions
  */
-const CasList: React.FC<CasListProps> = ({ cas, onView, onEdit, onDelete }) => {
-  // ========================================
-  // 📭 ÉTAT VIDE
-  // ========================================
+const CasList: React.FC<CasListProps> = ({
+  cas,
+  onView,
+  onEdit,
+  onDelete
+}) => {
   if (cas.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        Aucun cas trouvé
+      <div className="text-center py-12">
+        <p className="text-gray-500">Aucun cas enregistré</p>
       </div>
     )
   }
 
-  // ========================================
-  // 🎨 RENDU
-  // ========================================
   return (
+
+    
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        {/* ========================================
-            📋 EN-TÊTE
-            ======================================== */}
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              ID
+      <table className="w-full">
+        <thead>
+          <tr className="bg-gray-100 border-b">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
+              Numéro
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Patient
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
               Maladie
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
+              Âge / Sexe
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
               District
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
+              Date Symptômes
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
               Statut
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
               Actions
             </th>
           </tr>
         </thead>
-
-        {/* ========================================
-            📄 CORPS
-            ======================================== */}
-        <tbody className="bg-white divide-y divide-gray-200">
-          {cas.map((item) => (
-            <tr
-              key={item.id}
-              className="hover:bg-gray-50 transition-colors"
-            >
-              {/* ID */}
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                #{item.id}
-              </td>
-
-              {/* Patient */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {item.patient_nom}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {item.patient_age} ans • {item.patient_sexe === 'M' ? 'Masculin' : 'Féminin'}
-                  </div>
-                </div>
+        <tbody>
+          {cas.map((c) => (
+            <tr key={c.id} className="border-b hover:bg-gray-50">
+              {/* Numéro */}
+              <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                {c.numero_cas}
               </td>
 
               {/* Maladie */}
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {item.maladie_nom}
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {c.maladie?.nom || 'N/A'}
+              </td>
+
+              {/* Âge et Sexe */}
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {c.age && c.sexe
+                  ? `${c.age} ans - ${c.sexe}`
+                  : c.age
+                  ? `${c.age} ans`
+                  : c.sexe || 'N/A'}
               </td>
 
               {/* District */}
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {item.district_nom}
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {c.district?.nom || 'N/A'}
               </td>
 
-              {/* Date */}
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {formatDate(item.date_debut_symptomes)}
+              {/* Date Symptômes */}
+              <td className="px-6 py-4 text-sm text-gray-600">
+                {c.date_symptomes}
               </td>
 
               {/* Statut */}
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`badge badge-${getStatusColor(item.statut)}`}>
-                  {item.statut}
+              <td className="px-6 py-4 text-sm">
+                <span className="px-3 py-1 rounded-full text-white bg-blue-500">
+                  {CasStatutLabels[c.statut] || c.statut}
                 </span>
-                {item.cas_deces && (
-                  <span className="ml-1 badge bg-gray-800 text-white">
-                    Décès
-                  </span>
-                )}
               </td>
 
               {/* Actions */}
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex items-center justify-end space-x-2">
-                  {/* Voir */}
-                  <button
-                    onClick={() => onView(item.id)}
-                    className="text-primary-600 hover:text-primary-900"
-                    title="Voir les détails"
+              <td className="px-6 py-4 text-sm space-x-2">
+                {onView && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => onView(c.id)}
                   >
-                    <Eye size={18} />
-                  </button>
+                    <Eye size={16} />
+                  </Button>
+                )}
 
-                  {/* Modifier */}
-                  <button
-                    onClick={() => onEdit(item.id)}
-                    className="text-warning-600 hover:text-warning-900"
-                    title="Modifier"
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => onEdit(c.id)}
                   >
-                    <Edit size={18} />
-                  </button>
+                    <Edit2 size={16} />
+                  </Button>
+                )}
 
-                  {/* Supprimer */}
-                  {onDelete && (
-                    <button
-                      onClick={() => onDelete(item.id)}
-                      className="text-danger-600 hover:text-danger-900"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
+                {onDelete && (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => onDelete(c.id)}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                )}
               </td>
             </tr>
           ))}

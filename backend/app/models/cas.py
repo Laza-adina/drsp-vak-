@@ -1,10 +1,10 @@
 # app/models/cas.py
+
 from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Float, Enum as SQLEnum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 from app.utils.enums import CasStatut, Sexe
-
 
 class Cas(Base):
     __tablename__ = "cas"
@@ -32,8 +32,8 @@ class Cas(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relations
-    maladie = relationship("Maladie", back_populates="cas")
-    centre_sante = relationship("CentreSante", back_populates="cas")
-    district = relationship("District", back_populates="cas")
-    created_by_user = relationship("User", back_populates="cas_crees", foreign_keys=[created_by])
+    # ✅ Relations (avec lazy='joined' pour charger automatiquement)
+    maladie = relationship("Maladie", foreign_keys=[maladie_id], lazy='joined')
+    centre_sante = relationship("CentreSante", foreign_keys=[centre_sante_id], lazy='joined')
+    district = relationship("District", foreign_keys=[district_id], lazy='joined')
+    created_by_user = relationship("User", foreign_keys=[created_by])

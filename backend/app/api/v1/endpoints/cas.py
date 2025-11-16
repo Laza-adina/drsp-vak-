@@ -16,6 +16,9 @@ from app.models.user import User
 
 router = APIRouter()
 
+# ========================================
+# 📋 GET - LISTE DES CAS AVEC FILTRES
+# ========================================
 
 @router.get("/", response_model=List[CasResponse])
 def read_cas(
@@ -23,58 +26,73 @@ def read_cas(
     limit: int = Query(100, le=1000),
     maladie_id: Optional[int] = Query(None, description="Filtrer par maladie"),
     district_id: Optional[int] = Query(None, description="Filtrer par district"),
-    date_debut: Optional[date] = Query(None, description="Date de début"),
-    date_fin: Optional[date] = Query(None, description="Date de fin"),
     statut: Optional[str] = Query(None, description="Filtrer par statut"),
+    # ✅ NOUVEAU : Filtres par dates d'apparition des symptômes
+    date_symptomes_debut: Optional[date] = Query(None, description="Date début symptômes"),
+    date_symptomes_fin: Optional[date] = Query(None, description="Date fin symptômes"),
+    # Filtres par dates de déclaration (existants)
+    date_declaration_debut: Optional[date] = Query(None, description="Date début déclaration"),
+    date_declaration_fin: Optional[date] = Query(None, description="Date fin déclaration"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    📋 Récupérer la liste des cas avec filtres
+    📋 Récupérer la liste des cas avec filtres avancés
     
-    Permet de filtrer par maladie, district, période et statut.
-    Supporte la pagination avec skip/limit.
+    Filtres disponibles:
+    - Par maladie (maladie_id)
+    - Par district (district_id)
+    - Par statut (suspect, probable, confirme, gueri, decede)
+    - Par période d'apparition des symptômes (date_symptomes_debut/fin)
+    - Par période de déclaration (date_declaration_debut/fin)
+    - Pagination (skip/limit)
     """
-    # ✅ CORRIGÉ : Suppression de .cas
     cas_list = crud_cas.get_by_filters(
         db,
         maladie_id=maladie_id,
         district_id=district_id,
-        date_debut=date_debut,
-        date_fin=date_fin,
         statut=statut,
+        date_symptomes_debut=date_symptomes_debut,
+        date_symptomes_fin=date_symptomes_fin,
+        date_declaration_debut=date_declaration_debut,
+        date_declaration_fin=date_declaration_fin,
         skip=skip,
         limit=limit
     )
     return cas_list
 
+# ========================================
+# 🔢 COUNT - NOMBRE DE CAS
+# ========================================
 
 @router.get("/count", response_model=dict)
 def count_cas(
     maladie_id: Optional[int] = Query(None),
     district_id: Optional[int] = Query(None),
-    date_debut: Optional[date] = Query(None),
-    date_fin: Optional[date] = Query(None),
     statut: Optional[str] = Query(None),
+    date_symptomes_debut: Optional[date] = Query(None),
+    date_symptomes_fin: Optional[date] = Query(None),
+    date_declaration_debut: Optional[date] = Query(None),
+    date_declaration_fin: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    🔢 Compter le nombre de cas selon les filtres
-    
-    Utile pour pagination et statistiques sans charger tous les résultats.
-    """
-    # ✅ CORRIGÉ : Suppression de .cas
+    """🔢 Compter le nombre de cas selon les filtres"""
     count = crud_cas.count_by_filters(
         db,
         maladie_id=maladie_id,
         district_id=district_id,
-        date_debut=date_debut,
-        date_fin=date_fin,
-        statut=statut
+        statut=statut,
+        date_symptomes_debut=date_symptomes_debut,
+        date_symptomes_fin=date_symptomes_fin,
+        date_declaration_debut=date_declaration_debut,
+        date_declaration_fin=date_declaration_fin
     )
     return {"count": count}
 
+# ========================================
+# 👁️ GET BY ID
+# ========================================
 
 @router.get("/{cas_id}", response_model=CasResponse)
 def read_cas_by_id(
@@ -82,12 +100,7 @@ def read_cas_by_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    👁️ Récupérer un cas par ID
-    
-    Retourne toutes les informations détaillées d'un cas spécifique.
-    """
-    # ✅ CORRIGÉ : Suppression de .cas
+    """👁️ Récupérer un cas par ID"""
     cas = crud_cas.get(db, id=cas_id)
     if not cas:
         raise HTTPException(
@@ -96,6 +109,9 @@ def read_cas_by_id(
         )
     return cas
 
+# ========================================
+# ➕ POST - CRÉER UN CAS
+# ========================================
 
 @router.post("/", response_model=CasResponse, status_code=status.HTTP_201_CREATED)
 def create_cas(
@@ -103,16 +119,13 @@ def create_cas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_data_entry_agent)
 ):
-    """
-    ➕ Créer un nouveau cas (Agent de saisie, Épidémiologiste, Admin)
-    
-    Enregistre un nouveau cas de maladie avec toutes les informations
-    du patient, localisation, symptômes, etc.
-    """
-    # ✅ CORRIGÉ : Suppression de .cas
+    """➕ Créer un nouveau cas"""
     cas = crud_cas.create(db, obj_in=cas_in, created_by=current_user.id)
     return cas
 
+# ========================================
+# ✏️ PUT - METTRE À JOUR UN CAS
+# ========================================
 
 @router.put("/{cas_id}", response_model=CasResponse)
 def update_cas(
@@ -121,23 +134,19 @@ def update_cas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_data_entry_agent)
 ):
-    """
-    ✏️ Mettre à jour un cas (Agent de saisie, Épidémiologiste, Admin)
-    
-    Permet de modifier les informations d'un cas existant
-    (évolution, statut, résultats laboratoire, etc.).
-    """
-    # ✅ CORRIGÉ : Suppression de .cas
+    """✏️ Mettre à jour un cas"""
     cas = crud_cas.get(db, id=cas_id)
     if not cas:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Cas non trouvé"
         )
-    # ✅ CORRIGÉ : Suppression de .cas
     cas = crud_cas.update(db, db_obj=cas, obj_in=cas_in)
     return cas
 
+# ========================================
+# 🗑️ DELETE - SUPPRIMER UN CAS
+# ========================================
 
 @router.delete("/{cas_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_cas(
@@ -145,19 +154,12 @@ def delete_cas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_data_entry_agent)
 ):
-    """
-    🗑️ Supprimer un cas (Agent de saisie, Épidémiologiste, Admin)
-    
-    Supprime définitivement un cas de la base de données.
-    À utiliser avec prudence (préférer une désactivation si possible).
-    """
-    # ✅ CORRIGÉ : Suppression de .cas
+    """🗑️ Supprimer un cas"""
     cas = crud_cas.get(db, id=cas_id)
     if not cas:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Cas non trouvé"
         )
-    # ✅ CORRIGÉ : Suppression de .cas
     crud_cas.remove(db, id=cas_id)
     return None

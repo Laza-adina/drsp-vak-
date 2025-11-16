@@ -1,99 +1,105 @@
+// /frontend/src/types/cas.types.ts
+
 /**
  * 📄 Fichier: src/types/cas.types.ts
- * 📝 Description: Types liés aux cas de maladies
- * 🎯 Usage: Typage des données de cas, filtres, formulaires
+ * 📝 Description: Types pour la gestion des cas
  */
 
 // ========================================
-// 🏥 TYPES CAS
+// 🗺️ DISTRICT
 // ========================================
 
-/**
- * Statuts possibles d'un cas
- */
-export type CasStatut = 'Suspect' | 'Confirmé' | 'Écarté' | 'En cours'
+export interface District {
+  id: number
+  nom: string
+  code: string
+  population?: number
+  latitude?: number
+  longitude?: number
+  description?: string  
+}
 
-/**
- * Sexe du patient
- */
-export type PatientSexe = 'M' | 'F'
+// ========================================
+// 🦠 MALADIE
+// ========================================
 
-/**
- * Structure complète d'un cas
- */
+export interface Maladie {
+  id: number
+  nom: string
+  code: string
+  seuil_alerte: number
+  seuil_epidemie: number
+  description?: string
+}
+
+// ========================================
+// 🏥 CENTRE DE SANTÉ
+// ========================================
+
+export interface CentreSante {
+  id: number
+  nom: string
+  type: string
+  district_id: number
+  latitude?: number
+  longitude?: number
+}
+
+// ========================================
+// 📋 CAS
+// ========================================
+
 export interface Cas {
   id: number
+  numero_cas: string
   maladie_id: number
-  maladie_nom: string
-  district_id: number
-  district_nom: string
+  maladie?: Maladie
   centre_sante_id: number
-  centre_sante_nom: string
-  patient_nom: string
-  patient_age: number
-  patient_sexe: PatientSexe
-  date_debut_symptomes: string
-  date_notification: string
-  statut: CasStatut
-  cas_confirme: boolean
-  cas_deces: boolean
+  centre_sante?: CentreSante
+  district_id: number
+  district?: District
+  date_symptomes: string
+  date_declaration: string
+  age?: number
+  sexe?: string
+  statut: string
   latitude?: number
   longitude?: number
-  commentaire?: string
-  date_creation: string
-  date_modification?: string
-  utilisateur_id: number
-  utilisateur_nom?: string
+  observations?: string
+  created_by: number
+  created_at?: string
+  updated_at?: string
 }
 
-/**
- * Données pour créer un cas
- */
-export interface CreateCasData {
+// ========================================
+// 📝 CREATE INPUT
+// ========================================
+
+export interface CasCreateInput {
+  numero_cas: string
   maladie_id: number
-  district_id: number
   centre_sante_id: number
-  patient_nom: string
-  patient_age: number
-  patient_sexe: PatientSexe
-  date_debut_symptomes: string
-  date_notification: string
-  statut: CasStatut
-  cas_confirme: boolean
-  cas_deces: boolean
+  district_id: number
+  date_symptomes: string
+  date_declaration: string
+  age?: number
+  sexe?: string
+  statut: string
   latitude?: number
   longitude?: number
-  commentaire?: string
+  observations?: string
 }
 
-/**
- * Données pour mettre à jour un cas
- */
-export interface UpdateCasData extends Partial<CreateCasData> {}
+// ========================================
+// 🔍 FILTRES
+// ========================================
 
-/**
- * Filtres pour la liste des cas
- */
 export interface CasFilters {
   maladie_id?: number
   district_id?: number
-  centre_sante_id?: number
-  statut?: CasStatut
-  date_debut?: string // Date de début de période
-  date_fin?: string // Date de fin de période
-  cas_confirme?: boolean
-  cas_deces?: boolean
-  search?: string // Recherche texte (nom patient, commentaire)
-}
-
-/**
- * Statistiques d'un cas (pour tableau de bord)
- */
-export interface CasStats {
-  total: number
-  suspects: number
-  confirmes: number
-  ecartes: number
-  en_cours: number
-  deces: number
+  statut?: string
+  date_debut?: string
+  date_symptomes_debut?: string 
+  date_symptomes_fin?: string 
+  date_fin?: string
 }

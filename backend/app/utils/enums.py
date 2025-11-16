@@ -3,10 +3,10 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-    ADMINISTRATEUR = "administrateur"
-    EPIDEMIOLOGISTE = "epidemiologiste"
-    AGENT_SAISIE = "agent_saisie"
-    LECTEUR = "lecteur"
+    ADMINISTRATEUR = "ADMINISTRATEUR"  
+    EPIDEMIOLOGISTE = "EPIDEMIOLOGISTE"  
+    AGENT_SAISIE = "AGENT_SAISIE"  
+    LECTEUR = "LECTEUR"  
 
 
 class CasStatut(str, Enum):
