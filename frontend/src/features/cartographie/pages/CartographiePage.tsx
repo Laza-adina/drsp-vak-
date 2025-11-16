@@ -1,173 +1,180 @@
 /**
  * 📄 Fichier: src/features/cartographie/pages/CartographiePage.tsx
  * 📝 Description: Page de cartographie interactive
- * 🎯 Usage: Visualisation géographique des cas sur une carte
  */
 
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { cartographieService } from '@/api/services/cartographie.service'
-import { referentielsService } from '@/api/services/users.service'
+import { useNavigate } from 'react-router-dom'
+import { casService } from '@/api/services/cas.service'
+import { referentielsService } from '@/api/services/referentiels.service'
 import Card from '@/components/common/Card'
-import Select from '@/components/common/Select'
 import Loading from '@/components/common/Loading'
-import MapContainer from '@/components/maps/MapContainer'
-import MarkerCluster from '@/components/maps/MarkerCluster'
-import MapControls from '../components/MapControls'
-import MapLegend from '../components/MapLegend'
+import MapWithMarkers from '../components/MapWithMarkers'
+import HeatmapView from '../components/HeatmapView'
+import { Map, TrendingUp } from 'lucide-react'
 
-// ========================================
-// 🗺️ PAGE CARTOGRAPHIE
-// ========================================
-
-/**
- * Page de cartographie avec filtres et différentes visualisations
- */
 const CartographiePage: React.FC = () => {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   
-  // État des filtres
-  const [maladieId, setMaladieId] = useState<number | undefined>(
-    searchParams.get('maladie') ? Number(searchParams.get('maladie')) : undefined
-  )
-  const [districtId, setDistrictId] = useState<number | undefined>(
-    searchParams.get('district') ? Number(searchParams.get('district')) : undefined
-  )
-  
-  // Type de visualisation
+  // États
   const [viewMode, setViewMode] = useState<'markers' | 'heatmap'>('markers')
+  const [maladieId, setMaladieId] = useState<number | undefined>()
+  const [districtId, setDistrictId] = useState<number | undefined>()
+  const [statut, setStatut] = useState<string | undefined>()
 
-  // ========================================
-  // 📡 CHARGEMENT DES DONNÉES
-  // ========================================
-  
-  // Référentiels
-  const { data: maladies } = useQuery({
+  // Chargement des données
+  const { data: cas = [], isLoading } = useQuery({
+    queryKey: ['cas', { maladie_id: maladieId, district_id: districtId, statut }],
+    queryFn: () => casService.getAll({ maladie_id: maladieId, district_id: districtId, statut }),
+  })
+
+  const { data: maladies = [] } = useQuery({
     queryKey: ['maladies'],
     queryFn: () => referentielsService.getMaladies(),
   })
 
-  const { data: districts } = useQuery({
+  const { data: districts = [] } = useQuery({
     queryKey: ['districts'],
     queryFn: () => referentielsService.getDistricts(),
   })
 
-  // Marqueurs de cas
-  const { data: markers, isLoading } = useQuery({
-    queryKey: ['cartographie-markers', maladieId, districtId],
-    queryFn: () => cartographieService.getMarkers(maladieId, districtId),
-  })
+  // Filtrer les cas qui ont des coordonnées
+  const casAvecCoordonnees = cas.filter(c => c.latitude && c.longitude)
 
-  // ========================================
-  // 🎯 HANDLERS
-  // ========================================
-  const handleMarkerClick = (marker: any) => {
-    navigate(`/cas/${marker.id}`)
-  }
-
-  // ========================================
-  // 🎨 RENDU
-  // ========================================
   return (
     <div className="space-y-6">
-      {/* ========================================
-          📋 EN-TÊTE
-          ======================================== */}
+      {/* EN-TÊTE */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Cartographie</h1>
+        <h1 className="text-2xl font-bold text-gray-900">🗺️ Cartographie</h1>
         <p className="text-gray-600">
-          Visualisation géographique des cas - {markers?.length || 0} cas localisés
+          Visualisation géographique des cas - {casAvecCoordonnees.length} cas localisés
         </p>
       </div>
 
-      {/* ========================================
-          🔍 FILTRES
-          ======================================== */}
+      {/* FILTRES & MODES */}
       <Card>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Select
-            label="Maladie"
-            placeholder="Toutes les maladies"
-            value={maladieId || ''}
-            onChange={(e) => setMaladieId(e.target.value ? Number(e.target.value) : undefined)}
-            options={maladies?.map((m: any) => ({ value: m.id, label: m.nom })) || []}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          {/* Maladie */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Maladie</label>
+            <select
+              value={maladieId || ''}
+              onChange={(e) => setMaladieId(e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Toutes</option>
+              {maladies.map((m: any) => (
+                <option key={m.id} value={m.id}>{m.nom}</option>
+              ))}
+            </select>
+          </div>
 
-          <Select
-            label="District"
-            placeholder="Tous les districts"
-            value={districtId || ''}
-            onChange={(e) => setDistrictId(e.target.value ? Number(e.target.value) : undefined)}
-            options={districts?.map((d: any) => ({ value: d.id, label: d.nom })) || []}
-          />
+          {/* District */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+            <select
+              value={districtId || ''}
+              onChange={(e) => setDistrictId(e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tous</option>
+              {districts.map((d: any) => (
+                <option key={d.id} value={d.id}>{d.nom}</option>
+              ))}
+            </select>
+          </div>
 
-          <Select
-            label="Affichage"
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as 'markers' | 'heatmap')}
-            options={[
-              { value: 'markers', label: 'Marqueurs' },
-              { value: 'heatmap', label: 'Carte de chaleur' },
-            ]}
-          />
+          {/* Statut */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Statut</label>
+            <select
+              value={statut || ''}
+              onChange={(e) => setStatut(e.target.value || undefined)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Tous</option>
+              <option value="suspect">🟡 Suspect</option>
+              <option value="probable">🟠 Probable</option>
+              <option value="confirme">🔴 Confirmé</option>
+              <option value="gueri">🟢 Guéri</option>
+              <option value="decede">⚫ Décédé</option>
+            </select>
+          </div>
+
+          {/* Mode d'affichage */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Affichage</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode('markers')}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                  viewMode === 'markers'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Map size={18} />
+                <span className="text-sm">Marqueurs</span>
+              </button>
+              <button
+                onClick={() => setViewMode('heatmap')}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                  viewMode === 'heatmap'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <TrendingUp size={18} />
+                <span className="text-sm">Chaleur</span>
+              </button>
+            </div>
+          </div>
         </div>
       </Card>
 
-      {/* ========================================
-          🗺️ CARTE
-          ======================================== */}
+      {/* CARTE */}
       <Card padding={false}>
         {isLoading ? (
           <div className="h-[600px] flex items-center justify-center">
             <Loading message="Chargement de la carte..." />
           </div>
+        ) : viewMode === 'markers' ? (
+          <MapWithMarkers cas={casAvecCoordonnees} onMarkerClick={(id) => navigate(`/cas/${id}`)} />
         ) : (
-          <div className="relative">
-            <MapContainer height="600px">
-              {viewMode === 'markers' && markers && (
-                <MarkerCluster
-                  markers={markers}
-                  onMarkerClick={handleMarkerClick}
-                />
-              )}
-            </MapContainer>
-
-            {/* Contrôles de la carte */}
-            <div className="absolute top-4 right-4 z-10">
-              <MapControls />
-            </div>
-
-            {/* Légende */}
-            <div className="absolute bottom-4 left-4 z-10">
-              <MapLegend />
-            </div>
-          </div>
+          <HeatmapView cas={casAvecCoordonnees} districts={districts} />
         )}
       </Card>
 
-      {/* ========================================
-          📊 STATISTIQUES
-          ======================================== */}
-      {markers && markers.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* STATISTIQUES */}
+      {casAvecCoordonnees.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
-            <p className="text-sm text-gray-600">Cas sur la carte</p>
-            <p className="text-3xl font-bold text-gray-900">{markers.length}</p>
+            <p className="text-xs text-gray-600">Total cas</p>
+            <p className="text-2xl font-bold text-gray-900">{casAvecCoordonnees.length}</p>
           </Card>
-          
           <Card>
-            <p className="text-sm text-gray-600">Cas confirmés</p>
-            <p className="text-3xl font-bold text-danger-600">
-              {markers.filter(m => m.cas_confirme).length}
+            <p className="text-xs text-gray-600">Suspects</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {casAvecCoordonnees.filter(c => c.statut === 'suspect').length}
             </p>
           </Card>
-          
           <Card>
-            <p className="text-sm text-gray-600">Décès</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {markers.filter(m => m.cas_deces).length}
+            <p className="text-xs text-gray-600">Probables</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {casAvecCoordonnees.filter(c => c.statut === 'probable').length}
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs text-gray-600">Confirmés</p>
+            <p className="text-2xl font-bold text-red-600">
+              {casAvecCoordonnees.filter(c => c.statut === 'confirme').length}
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs text-gray-600">Guéris</p>
+            <p className="text-2xl font-bold text-green-600">
+              {casAvecCoordonnees.filter(c => c.statut === 'gueri').length}
             </p>
           </Card>
         </div>

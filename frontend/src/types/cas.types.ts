@@ -15,6 +15,7 @@ export interface District {
   code: string
   population?: number
   latitude?: number
+  is_active?: boolean
   longitude?: number
   description?: string  
 }
@@ -28,6 +29,7 @@ export interface Maladie {
   nom: string
   code: string
   seuil_alerte: number
+  is_active?: boolean
   seuil_epidemie: number
   description?: string
 }
@@ -42,6 +44,7 @@ export interface CentreSante {
   type: string
   district_id: number
   latitude?: number
+  is_active?: boolean
   longitude?: number
 }
 
@@ -52,6 +55,7 @@ export interface CentreSante {
 export interface Cas {
   id: number
   numero_cas: string
+  nom?: string
   maladie_id: number
   maladie?: Maladie
   centre_sante_id: number
@@ -76,7 +80,7 @@ export interface Cas {
 // ========================================
 
 export interface CasCreateInput {
-  numero_cas: string
+ 
   maladie_id: number
   centre_sante_id: number
   district_id: number
@@ -85,6 +89,7 @@ export interface CasCreateInput {
   age?: number
   sexe?: string
   statut: string
+  nom?: string
   latitude?: number
   longitude?: number
   observations?: string

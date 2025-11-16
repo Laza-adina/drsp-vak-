@@ -18,6 +18,8 @@ class Maladie(Base):
     description = Column(Text, nullable=True)
     symptomes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Relations
     cas = relationship("Cas", back_populates="maladie")

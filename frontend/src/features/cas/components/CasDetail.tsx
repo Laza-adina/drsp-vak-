@@ -1,8 +1,4 @@
-/**
- * 📄 Fichier: src/features/cas/components/CasDetail.tsx
- * 📝 Description: Affichage détaillé d'un cas
- * 🎯 Usage: Vue complète des informations d'un cas
- */
+//frontend/src/features/cas/components/casDetails
 
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -14,39 +10,23 @@ import Button from '@/components/common/Button'
 import Loading from '@/components/common/Loading'
 import ErrorMessage from '@/components/common/ErrorMessage'
 import { formatDate, formatDateTime } from '@/utils/formatters'
-import { getStatusColor } from '@/utils/helpers'
 import { usePermissions } from '@/hooks/usePermissions'
 
-// ========================================
-// 👁️ COMPOSANT CAS DETAIL
-// ========================================
-
-/**
- * Affichage détaillé d'un cas spécifique
- */
 const CasDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { canEditCas } = usePermissions()
 
-  // ========================================
-  // 📡 CHARGEMENT DU CAS
-  // ========================================
+  // Charger le cas
   const { data: cas, isLoading, error } = useQuery({
     queryKey: ['cas', id],
     queryFn: () => casService.getById(Number(id)),
   })
 
-  // ========================================
-  // ⏳ ÉTAT DE CHARGEMENT
-  // ========================================
   if (isLoading) {
     return <Loading message="Chargement..." />
   }
 
-  // ========================================
-  // ❌ GESTION D'ERREUR
-  // ========================================
   if (error || !cas) {
     return (
       <ErrorMessage
@@ -56,14 +36,10 @@ const CasDetail: React.FC = () => {
     )
   }
 
-  // ========================================
-  // 🎨 RENDU
-  // ========================================
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* ========================================
-          📋 EN-TÊTE
-          ======================================== */}
+
+      {/* EN-TETE */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button
@@ -77,9 +53,9 @@ const CasDetail: React.FC = () => {
 
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Cas #{cas.id}
+              {cas.numero_cas}  {/* ✅ Afficher le numéro de cas */}
             </h1>
-            <p className="text-gray-600">{cas.maladie_nom}</p>
+            <p className="text-gray-600">{cas.maladie?.nom || '-'}</p>
           </div>
         </div>
 
@@ -94,37 +70,39 @@ const CasDetail: React.FC = () => {
         )}
       </div>
 
-      {/* ========================================
-          📊 INFORMATIONS GÉNÉRALES
-          ======================================== */}
+      {/* INFOS GENERALES */}
       <Card>
         <div className="flex items-start justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-900">
             Informations générales
           </h3>
           <div className="flex space-x-2">
-            <span className={`badge badge-${getStatusColor(cas.statut)}`}>
-              {cas.statut}
+            <span className={
+              cas.statut === 'confirme'
+                ? 'badge badge-danger'
+                : cas.statut === 'decede'
+                ? 'badge bg-gray-800 text-white'
+                : 'badge badge-primary'
+            }>
+              {cas.statut === 'confirme' && 'Confirmé'}
+              {cas.statut === 'decede' && 'Décès'}
+              {cas.statut !== 'confirme' && cas.statut !== 'decede' && cas.statut}
             </span>
-            {cas.cas_confirme && (
-              <span className="badge badge-danger">Confirmé</span>
-            )}
-            {cas.cas_deces && (
-              <span className="badge bg-gray-800 text-white">Décès</span>
-            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Patient */}
+          {/* ✅ Patient avec NOM */}
           <div>
             <div className="flex items-center text-gray-500 mb-2">
               <User size={18} className="mr-2" />
               <span className="text-sm font-medium">Patient</span>
             </div>
-            <p className="text-gray-900 font-medium">{cas.patient_nom}</p>
+            <p className="text-gray-900 font-medium">
+              {cas.nom || 'Non renseigné'}  {/* ✅ AFFICHAGE DU NOM */}
+            </p>
             <p className="text-sm text-gray-600">
-              {cas.patient_age} ans • {cas.patient_sexe === 'M' ? 'Masculin' : 'Féminin'}
+              {cas.age !== undefined ? `${cas.age} ans` : '-'} • {cas.sexe === 'M' ? 'Masculin' : cas.sexe === 'F' ? 'Féminin' : '-'}
             </p>
           </div>
 
@@ -134,41 +112,43 @@ const CasDetail: React.FC = () => {
               <Activity size={18} className="mr-2" />
               <span className="text-sm font-medium">Maladie</span>
             </div>
-            <p className="text-gray-900 font-medium">{cas.maladie_nom}</p>
+            <p className="text-gray-900 font-medium">{cas.maladie?.nom || '-'}</p>
           </div>
 
-          {/* Dates */}
+          {/* Date début symptômes */}
           <div>
             <div className="flex items-center text-gray-500 mb-2">
               <Calendar size={18} className="mr-2" />
               <span className="text-sm font-medium">Date début symptômes</span>
             </div>
-            <p className="text-gray-900">{formatDate(cas.date_debut_symptomes)}</p>
+            <p className="text-gray-900">{formatDate(cas.date_symptomes)}</p>
           </div>
 
+          {/* Date notification */}
           <div>
             <div className="flex items-center text-gray-500 mb-2">
               <Calendar size={18} className="mr-2" />
               <span className="text-sm font-medium">Date notification</span>
             </div>
-            <p className="text-gray-900">{formatDate(cas.date_notification)}</p>
+            <p className="text-gray-900">{formatDate(cas.date_declaration)}</p>
           </div>
 
-          {/* Localisation */}
+          {/* District */}
           <div>
             <div className="flex items-center text-gray-500 mb-2">
               <MapPin size={18} className="mr-2" />
               <span className="text-sm font-medium">District</span>
             </div>
-            <p className="text-gray-900">{cas.district_nom}</p>
+            <p className="text-gray-900">{cas.district?.nom || '-'}</p>
           </div>
 
+          {/* Centre de santé */}
           <div>
             <div className="flex items-center text-gray-500 mb-2">
               <MapPin size={18} className="mr-2" />
               <span className="text-sm font-medium">Centre de santé</span>
             </div>
-            <p className="text-gray-900">{cas.centre_sante_nom}</p>
+            <p className="text-gray-900">{cas.centre_sante?.nom || '-'}</p>
           </div>
         </div>
 
@@ -185,18 +165,16 @@ const CasDetail: React.FC = () => {
           </div>
         )}
 
-        {/* Commentaire */}
-        {cas.commentaire && (
+        {/* Observations */}
+        {cas.observations && (
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Commentaire</h4>
-            <p className="text-gray-900">{cas.commentaire}</p>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Observations</h4>
+            <p className="text-gray-900">{cas.observations}</p>
           </div>
         )}
       </Card>
 
-      {/* ========================================
-          ℹ️ MÉTADONNÉES
-          ======================================== */}
+      {/* MÉTADONNÉES */}
       <Card>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Informations système
@@ -204,18 +182,12 @@ const CasDetail: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Créé le :</span>{' '}
-            <span className="text-gray-900">{formatDateTime(cas.date_creation)}</span>
+            <span className="text-gray-900">{formatDateTime(cas.created_at)}</span>
           </div>
-          {cas.date_modification && (
+          {cas.updated_at && (
             <div>
               <span className="text-gray-600">Modifié le :</span>{' '}
-              <span className="text-gray-900">{formatDateTime(cas.date_modification)}</span>
-            </div>
-          )}
-          {cas.utilisateur_nom && (
-            <div>
-              <span className="text-gray-600">Saisi par :</span>{' '}
-              <span className="text-gray-900">{cas.utilisateur_nom}</span>
+              <span className="text-gray-900">{formatDateTime(cas.updated_at)}</span>
             </div>
           )}
         </div>

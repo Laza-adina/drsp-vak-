@@ -34,6 +34,7 @@ class MaladieUpdate(BaseModel):
 
 class MaladieResponse(MaladieBase):
     id: int
+    is_active: bool = True
     
     class Config:
         from_attributes = True

@@ -5,6 +5,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, Field
 from app.utils.enums import CasStatut, Sexe
 
+
 # ========================================
 # 📋 SCHÉMAS POUR LES RELATIONS
 # ========================================
@@ -17,6 +18,7 @@ class MaladieInCas(BaseModel):
     class Config:
         from_attributes = True
 
+
 class DistrictInCas(BaseModel):
     id: int
     nom: str
@@ -24,6 +26,7 @@ class DistrictInCas(BaseModel):
     
     class Config:
         from_attributes = True
+
 
 class CentreSanteInCas(BaseModel):
     id: int
@@ -33,11 +36,13 @@ class CentreSanteInCas(BaseModel):
     class Config:
         from_attributes = True
 
+
 # ========================================
 # 📋 SCHÉMA DE BASE
 # ========================================
 
 class CasBase(BaseModel):
+    nom: Optional[str] = None  # ✅ AJOUT
     maladie_id: int
     centre_sante_id: int
     district_id: int
@@ -50,12 +55,16 @@ class CasBase(BaseModel):
     longitude: Optional[float] = None
     observations: Optional[str] = None
 
+
 class CasCreate(CasBase):
     pass
 
+
 class CasUpdate(BaseModel):
+    nom: Optional[str] = None  # ✅ AJOUT
     statut: Optional[CasStatut] = None
     observations: Optional[str] = None
+
 
 # ========================================
 # 📋 SCHÉMA DE RÉPONSE
@@ -65,6 +74,7 @@ class CasResponse(BaseModel):
     """Schéma de réponse avec relations"""
     id: int
     numero_cas: str
+    nom: Optional[str] = None  # ✅ AJOUT
     maladie_id: int
     centre_sante_id: int
     district_id: int

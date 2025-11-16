@@ -1,5 +1,5 @@
 # app/models/district.py
-from sqlalchemy import Column, Integer, String, Float, Text
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,7 +14,7 @@ class District(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     description = Column(Text, nullable=True)
-    
+    is_active = Column(Boolean, default=True, nullable=False)
     # Relations
     centres_sante = relationship("CentreSante", back_populates="district")
     users = relationship("User", back_populates="district")

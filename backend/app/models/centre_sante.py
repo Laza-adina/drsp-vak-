@@ -19,6 +19,7 @@ class CentreSante(Base):
     capacite_accueil = Column(Integer, nullable=True)
     a_laboratoire = Column(Boolean, default=False)
     telephone = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
     
     # Relations
     district = relationship("District", back_populates="centres_sante")

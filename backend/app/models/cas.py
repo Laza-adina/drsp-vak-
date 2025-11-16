@@ -11,6 +11,7 @@ class Cas(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     numero_cas = Column(String, unique=True, nullable=False, index=True)
+    nom = Column(String(200), nullable=True)
     
     maladie_id = Column(Integer, ForeignKey("maladies.id"), nullable=False)
     centre_sante_id = Column(Integer, ForeignKey("centres_sante.id"), nullable=False)

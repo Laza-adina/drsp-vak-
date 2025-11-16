@@ -89,7 +89,8 @@ export const CentreSanteSelect: React.FC<CentreSanteSelectProps> = ({
 }) => {
   const { data: centres = [], isLoading } = useQuery({
     queryKey: ['centres-sante', districtId],
-    queryFn: () => referentielsService.getCentresSante(districtId),  // ✅ districtId est un number
+    queryFn: () => referentielsService.getCentresSante(false, districtId),// number ity
+  
     enabled: !!districtId,
   })
 

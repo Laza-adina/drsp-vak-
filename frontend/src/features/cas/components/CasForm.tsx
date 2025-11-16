@@ -26,10 +26,10 @@ import type { Cas, CasCreateInput } from '@/types/cas.types'
 // ========================================
 
 const casSchema = z.object({
-  numero_cas: z.string().min(1, 'Numéro de cas requis'),
+  nom: z.string().optional(),  // ✅ AJOUT : nom du patient
   maladie_id: z.number().min(1, 'Maladie requise'),
   centre_sante_id: z.number().min(1, 'Centre de santé requis'),
-  district_id: z.number().min(1, 'District requis'),  // ✅ CHANGÉ en number
+  district_id: z.number().min(1, 'District requis'),
   date_symptomes: z.string().min(1, 'Date des symptômes requise'),
   date_declaration: z.string().min(1, 'Date de déclaration requise'),
   age: z.number().optional(),
@@ -54,9 +54,8 @@ interface CasFormProps {
 const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
   const isEditMode = !!initialData
   
-  // ✅ CHANGÉ : selectedDistrict est maintenant un number
   const [selectedDistrict, setSelectedDistrict] = useState<number | undefined>(
-    initialData?.district_id  // Déjà un number depuis la BD
+    initialData?.district_id
   )
 
   // ========================================
@@ -72,10 +71,10 @@ const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
   } = useForm<CasFormData>({
     resolver: zodResolver(casSchema),
     defaultValues: {
-      numero_cas: initialData?.numero_cas || '',
+      nom: initialData?.nom || '',  // ✅ AJOUT
       maladie_id: initialData?.maladie_id || undefined,
       centre_sante_id: initialData?.centre_sante_id || undefined,
-      district_id: initialData?.district_id || undefined,  // ✅ CHANGÉ : plus de toString()
+      district_id: initialData?.district_id || undefined,
       date_symptomes: initialData?.date_symptomes || '',
       date_declaration: initialData?.date_declaration || '',
       age: initialData?.age || undefined,
@@ -119,10 +118,10 @@ const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
   const onSubmit = (data: CasFormData) => {
     const payload: CasCreateInput = {
       ...data,
-      district_id: data.district_id,  // ✅ Déjà un number, pas besoin de Number()
+      district_id: data.district_id,
     }
     
-    console.log('📤 Envoi du cas:', payload)  // Pour debugger
+    console.log('📤 Envoi du cas:', payload)
     mutation.mutate(payload)
   }
 
@@ -136,22 +135,17 @@ const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
           INFORMATIONS DE BASE
           ======================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Numéro de cas */}
+        {/* ✅ NOM DU PATIENT */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Numéro de cas *
+            Nom du patient
           </label>
           <input
             type="text"
-            placeholder="Ex: VAKIN-2025-00001"
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.numero_cas ? 'border-red-500' : 'border-gray-300'
-            }`}
-            {...register('numero_cas')}
+            placeholder="Nom complet du patient"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            {...register('nom')}
           />
-          {errors.numero_cas && (
-            <p className="text-red-600 text-sm mt-1">{errors.numero_cas.message}</p>
-          )}
         </div>
 
         {/* Âge */}
@@ -189,8 +183,8 @@ const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
           <DistrictSelect
             value={selectedDistrict}
             onChange={(value) => {
-              setSelectedDistrict(value)  // ✅ value est un number
-              setValue('district_id', value)  // ✅ setValue accepte le number
+              setSelectedDistrict(value)
+              setValue('district_id', value)
             }}
             required
             error={errors.district_id?.message}
@@ -205,7 +199,7 @@ const CasForm: React.FC<CasFormProps> = ({ initialData, onSuccess }) => {
         <CentreSanteSelect
           value={centre_sante_id}
           onChange={(value) => setValue('centre_sante_id', value)}
-          districtId={selectedDistrict}  // ✅ Passer le number directement
+          districtId={selectedDistrict}
           required
           error={errors.centre_sante_id?.message}
         />
