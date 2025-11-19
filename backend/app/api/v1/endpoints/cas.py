@@ -132,31 +132,42 @@ def create_cas(
     """
     
     # ========================================
-    # ✅ GÉNÉRATION AUTOMATIQUE DU NUMÉRO
+    # ✅ GÉNÉRATION AUTOMATIQUE DU NUMÉRO (CORRIGÉE)
     # ========================================
     annee = datetime.now().year
+    prefix = f"VAKIN-{annee}-"
     
+    # Chercher le dernier numéro avec ce préfixe
     dernier_cas = db.query(Cas).filter(
-        Cas.numero_cas.like(f"VAKIN-{annee}-%")
+        Cas.numero_cas.like(f"{prefix}%")
     ).order_by(Cas.id.desc()).first()
     
-    if dernier_cas:
+    if dernier_cas and dernier_cas.numero_cas:
         try:
+            # Extraire le numéro de la fin (ex: "VAKIN-2025-00012" -> 12)
             dernier_num = int(dernier_cas.numero_cas.split('-')[-1])
             nouveau_num = dernier_num + 1
         except (ValueError, IndexError):
+            # Si erreur de parsing, on recommence à 1
             nouveau_num = 1
     else:
+        # Pas de cas existant, on commence à 1
         nouveau_num = 1
     
-    numero_cas = f"CAS-{annee}-{nouveau_num:05d}"
+    # Générer le numéro au format VAKIN-2025-00001
+    numero_cas = f"{prefix}{nouveau_num:05d}"
+    
+    # ✅ Vérifier que le numéro n'existe pas déjà (sécurité supplémentaire)
+    while db.query(Cas).filter(Cas.numero_cas == numero_cas).first():
+        nouveau_num += 1
+        numero_cas = f"{prefix}{nouveau_num:05d}"
     
     # ========================================
-    # 📝 CRÉATION DU CAS DIRECTEMENT
+    # 📝 CRÉATION DU CAS
     # ========================================
     db_cas = Cas(
         numero_cas=numero_cas,
-        nom=cas_in.nom,  # ✅ Inclure le nom
+        nom=cas_in.nom,
         maladie_id=cas_in.maladie_id,
         centre_sante_id=cas_in.centre_sante_id,
         district_id=cas_in.district_id,
@@ -176,6 +187,7 @@ def create_cas(
     db.refresh(db_cas)
     
     return db_cas
+
 
 
 # ========================================

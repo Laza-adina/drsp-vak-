@@ -13,7 +13,8 @@ from app.api.v1.endpoints import (
     cartographie,
     statistiques,
     rapports,
-    export
+    export,
+    predictions
 )
 
 api_router = APIRouter()
@@ -105,4 +106,11 @@ api_router.include_router(
     export.router,
     prefix="/export",
     tags=["Export"]
+)
+
+# Prédictions IA
+api_router.include_router(
+    predictions.router,
+    prefix="/predictions",
+    tags=["Prédictions IA"]
 )

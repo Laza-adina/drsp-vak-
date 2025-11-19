@@ -1,74 +1,107 @@
-/**
- * 📄 Fichier: src/types/interventions.types.ts
- * 📝 Description: Types liés aux interventions sanitaires
- * 🎯 Usage: Typage des interventions, campagnes, actions terrain
- */
+// src/types/interventions.types.ts
+export type TypeIntervention = 
+  | 'vaccination'
+  | 'sensibilisation'
+  | 'desinfection'
+  | 'distribution_medicaments'
+  | 'formation_personnel'
+  | 'enquete_terrain'
+  | 'autre'
 
-// ========================================
-// 💼 TYPES INTERVENTIONS
-// ========================================
+export type InterventionStatut = 
+  | 'planifiee'
+  | 'en_cours'
+  | 'terminee'
+  | 'annulee'
 
-/**
- * Types d'interventions
- */
-export type TypeIntervention =
-  | 'Vaccination'
-  | 'Sensibilisation'
-  | 'Distribution de médicaments'
-  | 'Désinfection'
-  | 'Formation'
-  | 'Autre'
-
-/**
- * Statuts d'intervention
- */
-export type InterventionStatut = 'Planifiée' | 'En cours' | 'Terminée' | 'Annulée'
-
-/**
- * Structure d'une intervention
- */
 export interface Intervention {
   id: number
-  district_id: number
-  district_nom: string
-  type_intervention: TypeIntervention
+  titre: string
   description: string
-  date_debut: string
-  date_fin_prevue: string
-  date_fin_reelle?: string
+  type: TypeIntervention
   statut: InterventionStatut
-  responsable: string
-  nombre_personnes_ciblees?: number
-  nombre_personnes_atteintes?: number
-  budget_prevu?: number
-  budget_utilise?: number
-  resultats?: string
-  date_creation: string
-  utilisateur_id: number
-}
-
-/**
- * Données pour créer une intervention
- */
-export interface CreateInterventionData {
   district_id: number
-  type_intervention: TypeIntervention
-  description: string
-  date_debut: string
-  date_fin_prevue: string
-  responsable: string
-  nombre_personnes_ciblees?: number
-  budget_prevu?: number
+  district?: { id: number; nom: string }
+  centre_sante_id?: number
+  maladie_id?: number
+  maladie?: { id: number; nom: string }
+  alerte_id?: number
+  date_planifiee: string
+  date_debut?: string
+  date_fin?: string
+  chef_equipe?: string
+  membres_equipe?: string
+  population_cible?: number
+  population_atteinte?: number
+  budget_alloue?: number
+  ressources_utilisees?: string
+  resultats?: string
+  efficacite_score?: number
+  recommandation_ia?: string
+  generee_par_ia: boolean
+  created_by: number
+  created_at: string
+  updated_at?: string
 }
 
-/**
- * Rapport d'intervention
- */
-export interface InterventionRapport {
-  intervention_id: number
-  date_rapport: string
-  personnes_atteintes: number
-  budget_utilise: number
-  observations: string
-  photos?: string[]
+export interface InterventionCreate {
+  titre: string
+  description: string
+  type: TypeIntervention
+  district_id: number
+  centre_sante_id?: number
+  maladie_id?: number
+  alerte_id?: number
+  date_planifiee: string
+  chef_equipe?: string
+  population_cible?: number
+  budget_alloue?: number
+  ressources_utilisees?: string
+}
+
+export interface InterventionUpdate extends Partial<InterventionCreate> {
+  statut?: InterventionStatut
+  date_debut?: string
+  date_fin?: string
+  population_atteinte?: number
+  resultats?: string
+  efficacite_score?: number
+}
+
+export interface InterventionFilters {
+  district_id?: number
+  maladie_id?: number
+  statut?: InterventionStatut
+}
+
+export interface AIRecommendationRequest {
+  maladie_id: number
+  district_id: number
+  alerte_id?: number
+}
+
+export interface AIRecommendation {
+  titre: string
+  description: string
+  type: TypeIntervention
+  priorite: 1 | 2 | 3
+  justification: string
+  population_cible: number
+  budget_estime: number
+  duree_jours: number
+  ressources: string[]
+  indicateurs_succes: string[]
+}
+
+export interface AIRecommendationResponse {
+  success: boolean
+  data: {
+    interventions: AIRecommendation[]
+    analyse_globale: string
+    risques_identifies: string[]
+    recommandations_generales: string
+  }
+  model?: string
+  tokens?: number
+  error?: string
 }

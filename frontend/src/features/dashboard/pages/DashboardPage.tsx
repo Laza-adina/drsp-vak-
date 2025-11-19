@@ -1,29 +1,23 @@
-/**
- * 📄 Fichier: src/features/dashboard/pages/DashboardPage.tsx
- * 📝 Description: Dashboard avec filtrage par maladie et actions rapides
- */
-
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'  // ✅ AJOUTER
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { 
   Activity, 
-  TrendingUp, 
-  Users, 
   AlertTriangle, 
   CheckCircle, 
   XCircle,
-  Plus,           // ✅ AJOUTER
-  FileText,       // ✅ AJOUTER
-  Download        // ✅ AJOUTER
+  Plus,
+  FileText,
+  Download
 } from 'lucide-react'
 import { referentielsService } from '@/api/services/referentiels.service'
 import Card from '@/components/common/Card'
-import Button from '@/components/common/Button'  // ✅ AJOUTER
+import Button from '@/components/common/Button'
 import Loading from '@/components/common/Loading'
 import StatsCard from '../components/StatsCard'
 import MaladieSelector from '../components/MaladieSelector'
 import AlerteSection from '../components/AlerteSection'
+import AlertesParDistrict from '../components/AlertesParDistrict'
 import CasEvolutionChart from '../components/CasEvolutionChart'
 import CasDistrictChart from '../components/CasDistrictChart'
 import CasStatutChart from '../components/CasStatutChart'
@@ -45,7 +39,7 @@ interface DashboardStats {
 }
 
 const DashboardPage: React.FC = () => {
-  const navigate = useNavigate()  // ✅ AJOUTER
+  const navigate = useNavigate()
   const [selectedMaladieId, setSelectedMaladieId] = useState<number | null>(null)
 
   // Récupérer les maladies
@@ -102,9 +96,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* ========================================
-          📋 EN-TÊTE AVEC ACTIONS RAPIDES
-          ======================================== */}
+      {/* EN-TÊTE */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -115,7 +107,6 @@ const DashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {/* ✅ BOUTONS D'ACTION RAPIDE */}
         <div className="flex gap-3">
           <Button
             variant="primary"
@@ -203,16 +194,26 @@ const DashboardPage: React.FC = () => {
             />
           </div>
 
+          {/* SECTION ALERTES + GRAPHIQUES */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Alertes par district */}
+            <div className="lg:col-span-1">
+              <AlertesParDistrict maladieId={selectedMaladieId ?? undefined} />
+            </div>
+
+            {/* Évolution temporelle */}
+            <div className="lg:col-span-2">
+              <Card>
+                <h3 className="text-lg font-semibold mb-4">
+                  📈 Évolution des Cas
+                </h3>
+                <CasEvolutionChart data={stats.evolution_temporelle} />
+              </Card>
+            </div>
+          </div>
+
           {/* Graphiques */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Évolution temporelle */}
-            <Card>
-              <h3 className="text-lg font-semibold mb-4">
-                📈 Évolution des Cas
-              </h3>
-              <CasEvolutionChart data={stats.evolution_temporelle} />
-            </Card>
-
             {/* Répartition par district */}
             <Card>
               <h3 className="text-lg font-semibold mb-4">
@@ -220,15 +221,15 @@ const DashboardPage: React.FC = () => {
               </h3>
               <CasDistrictChart data={stats.cas_par_district} />
             </Card>
-          </div>
 
-          {/* Statuts des cas */}
-          <Card>
-            <h3 className="text-lg font-semibold mb-4">
-              📊 Répartition par Statut
-            </h3>
-            <CasStatutChart data={stats.cas_par_statut} />
-          </Card>
+            {/* Statuts des cas */}
+            <Card>
+              <h3 className="text-lg font-semibold mb-4">
+                📊 Répartition par Statut
+              </h3>
+              <CasStatutChart data={stats.cas_par_statut} />
+            </Card>
+          </div>
         </>
       )}
 
@@ -243,7 +244,6 @@ const DashboardPage: React.FC = () => {
                 : 'Sélectionnez une maladie pour voir les statistiques'}
             </p>
             
-            {/* ✅ BOUTON D'ACTION SI AUCUNE DONNÉE */}
             <Button
               variant="primary"
               onClick={() => navigate('/cas/nouveau')}

@@ -27,11 +27,14 @@ export interface District {
 export interface Maladie {
   id: number
   nom: string
-  code: string
-  seuil_alerte: number
-  is_active?: boolean
-  seuil_epidemie: number
+  code?: string
+  code_icd10?: string
+  seuil_alerte: number  // ✅ NOUVEAU
+  seuil_epidemie: number  // ✅ NOUVEAU
+  priorite_surveillance: number
   description?: string
+  is_active: boolean
+  
 }
 
 // ========================================
@@ -107,4 +110,26 @@ export interface CasFilters {
   date_symptomes_debut?: string 
   date_symptomes_fin?: string 
   date_fin?: string
+}
+
+
+export interface MaladieCreateInput {
+  nom: string
+  code?: string
+  code_icd10?: string
+  seuil_alerte: number
+  seuil_epidemie: number
+  priorite_surveillance?: number
+  description?: string
+}
+
+export interface MaladieUpdateInput {
+  nom?: string
+  code?: string
+  code_icd10?: string
+  seuil_alerte?: number
+  seuil_epidemie?: number
+  priorite_surveillance?: number
+  description?: string
+  is_active?: boolean
 }

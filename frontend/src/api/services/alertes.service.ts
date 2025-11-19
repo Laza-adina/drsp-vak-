@@ -1,80 +1,76 @@
-/**
- * 📄 Fichier: src/api/services/alertes.service.ts
- * 📝 Description: Service de gestion des alertes
- * 🎯 Usage: CRUD alertes épidémiologiques
- */
-
+// src/api/services/alertes.service.ts
 import axiosInstance from '../axios.config'
-import { ALERTES_ENDPOINTS } from '../endpoints'
-import type { Alerte, CreateAlerteData } from '@/types/alertes.types'
-
-// ========================================
-// 🚨 SERVICE ALERTES
-// ========================================
+import type { Alerte, AlerteCreateInput, AlerteUpdateInput, AlerteFilters } from '@/types/alertes.types'
 
 export const alertesService = {
   /**
-   * 📋 Récupérer toutes les alertes
-   * @param actives - Filtrer uniquement les alertes actives (optionnel)
-   * @returns Liste des alertes
+   * Récupérer toutes les alertes avec filtres
    */
-  getAll: async (actives?: boolean): Promise<Alerte[]> => {
-    const endpoint = actives ? ALERTES_ENDPOINTS.ACTIVES : ALERTES_ENDPOINTS.LIST
-    const response = await axiosInstance.get(endpoint)
+  getAll: async (filters?: AlerteFilters): Promise<Alerte[]> => {
+    const response = await axiosInstance.get('/alertes', { params: filters })
     return response.data
   },
 
   /**
-   * 🔍 Récupérer une alerte par ID
-   * @param id - ID de l'alerte
-   * @returns Détails de l'alerte
+   * Récupérer une alerte par ID
    */
   getById: async (id: number): Promise<Alerte> => {
-    const response = await axiosInstance.get(ALERTES_ENDPOINTS.GET(id))
+    const response = await axiosInstance.get(`/alertes/${id}`)
     return response.data
   },
 
   /**
-   * ➕ Créer une nouvelle alerte
-   * @param data - Données de l'alerte
-   * @returns Alerte créée
+   * Créer une alerte manuelle
    */
-  create: async (data: CreateAlerteData): Promise<Alerte> => {
-    const response = await axiosInstance.post(ALERTES_ENDPOINTS.CREATE, data)
+  create: async (data: AlerteCreateInput): Promise<Alerte> => {
+    const response = await axiosInstance.post('/alertes', data)
     return response.data
   },
 
   /**
-   * ✏️ Mettre à jour une alerte
-   * @param id - ID de l'alerte
-   * @param data - Données à mettre à jour
-   * @returns Alerte mise à jour
+   * Mettre à jour une alerte
    */
-  update: async (id: number, data: Partial<CreateAlerteData>): Promise<Alerte> => {
-    const response = await axiosInstance.put(ALERTES_ENDPOINTS.UPDATE(id), data)
+  update: async (id: number, data: AlerteUpdateInput): Promise<Alerte> => {
+    const response = await axiosInstance.put(`/alertes/${id}`, data)
     return response.data
   },
 
   /**
-   * 🗑️ Supprimer une alerte
-   * @param id - ID de l'alerte
+   * Marquer une alerte comme résolue
+   */
+  resolve: async (id: number, actions: string): Promise<Alerte> => {
+    const response = await axiosInstance.post(`/alertes/${id}/resolve`, { actions })
+    return response.data
+  },
+
+  /**
+   * Supprimer une alerte
    */
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(ALERTES_ENDPOINTS.DELETE(id))
+    await axiosInstance.delete(`/alertes/${id}`)
   },
 
   /**
-   * ✅ Résoudre une alerte (changer le statut en "Résolue")
-   * @param id - ID de l'alerte
-   * @param resultats - Description des résultats
-   * @returns Alerte mise à jour
+   * Obtenir le nombre d'alertes actives
    */
-  resolve: async (id: number, resultats: string): Promise<Alerte> => {
-    const response = await axiosInstance.put(ALERTES_ENDPOINTS.UPDATE(id), {
-      statut: 'Résolue',
-      resultats,
-      date_resolution: new Date().toISOString(),
-    })
+  countActive: async (): Promise<number> => {
+    const response = await axiosInstance.get('/alertes/count/active')
+    return response.data.count
+  },
+
+  /**
+   * Vérifier et générer des alertes automatiques
+   */
+  checkThresholds: async (): Promise<Alerte[]> => {
+    const response = await axiosInstance.post('/alertes/check-thresholds')
+    return response.data
+  },
+
+  /**
+   * 🤖 Suggérer une action IA pour une alerte
+   */
+  suggererActionIA: async (alerteId: number): Promise<{ success: boolean; action_suggeree: string; alerte_id: number }> => {
+    const response = await axiosInstance.post(`/alertes/${alerteId}/suggerer-action-ia`)
     return response.data
   },
 }

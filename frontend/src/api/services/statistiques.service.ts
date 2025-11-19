@@ -1,86 +1,64 @@
-/**
- * 📄 Fichier: src/api/services/statistiques.service.ts
- * 📝 Description: Service de statistiques
- * 🎯 Usage: Analyses statistiques et prédictions
- */
-
+// src/api/services/statistiques.service.ts
 import axiosInstance from '../axios.config'
-import type {
-  TendanceData,
-  TauxIncidence,
-  DistributionAge,
-  DistributionSexe,
-} from '@/types/statistiques.types'
 
-// ========================================
-// 📈 SERVICE STATISTIQUES
-// ========================================
+export interface DashboardStats {
+  total_cas: number
+  cas_actifs: number
+  cas_gueris: number
+  cas_decedes: number
+  taux_guerison: number
+  taux_mortalite: number
+  nouveaux_cas_7j: number
+  evolution_7j: number
+  cas_par_district: Array<{ district: string; count: number }>
+  cas_par_statut: Array<{ statut: string; count: number }>
+  evolution_temporelle: Array<{ date: string; count: number }>
+}
+
+export interface TendanceResponse {
+  periode1_cas: number
+  periode2_cas: number
+  variation_pourcent: number
+  tendance: 'croissante' | 'decroissante' | 'stable'
+  date_debut: string
+  date_milieu: string
+  date_fin: string
+}
 
 export const statistiquesService = {
   /**
-   * 📉 Récupérer l'analyse de tendance
+   * Dashboard complet
    */
-  getTendance: async (maladieId?: number, periode: string = '30j'): Promise<TendanceData[]> => {
-    const response = await axiosInstance.get('/statistiques/tendance', {  // ✅ OK
-      params: { maladie_id: maladieId, periode },
-    })
+  getDashboard: async (maladieId?: number): Promise<DashboardStats> => {
+    const params = new URLSearchParams()
+    if (maladieId) params.append('maladie_id', maladieId.toString())
+    
+    const response = await axiosInstance.get(`/statistiques/dashboard?${params.toString()}`)
     return response.data
   },
 
   /**
-   * 📊 Récupérer les taux d'incidence par district
+   * Analyse de tendance
    */
-  getTauxIncidence: async (maladieId?: number): Promise<TauxIncidence[]> => {
-    const response = await axiosInstance.get('/statistiques/taux-incidence', {  // ✅ OK
-      params: { maladie_id: maladieId },
-    })
+  getTendance: async (maladieId?: number, districtId?: number, jours: number = 14): Promise<TendanceResponse> => {
+    const params = new URLSearchParams()
+    if (maladieId) params.append('maladie_id', maladieId.toString())
+    if (districtId) params.append('district_id', districtId.toString())
+    params.append('jours', jours.toString())
+    
+    const response = await axiosInstance.get(`/statistiques/tendance?${params.toString()}`)
     return response.data
   },
 
   /**
-   * 💀 Récupérer le taux de létalité
+   * Distribution par âge
    */
-  getTauxLetalite: async (maladieId?: number): Promise<any> => {
-    const response = await axiosInstance.get('/statistiques/taux-letalite', {  // ✅ Nouveau
-      params: { maladie_id: maladieId },
-    })
+  getDistributionAge: async (maladieId?: number, districtId?: number): Promise<Array<{ tranche_age: string; nombre_cas: number }>> => {
+    const params = new URLSearchParams()
+    if (maladieId) params.append('maladie_id', maladieId.toString())
+    if (districtId) params.append('district_id', districtId.toString())
+    
+    const response = await axiosInstance.get(`/statistiques/distribution-age?${params.toString()}`)
     return response.data
-  },
-
-  /**
-   * 🎯 Récupérer le taux d'attaque
-   */
-  getTauxAttaque: async (districtId?: number): Promise<any> => {
-    const response = await axiosInstance.get('/statistiques/taux-attaque', {  // ✅ Nouveau
-      params: { district_id: districtId },
-    })
-    return response.data
-  },
-
-  /**
-   * 👶 Récupérer la distribution par tranche d'âge
-   */
-  getDistributionAge: async (maladieId?: number): Promise<DistributionAge[]> => {
-    const response = await axiosInstance.get('/statistiques/distribution-age', {  // ✅ OK
-      params: { maladie_id: maladieId },
-    })
-    return response.data
-  },
-
-  /**
-   * 📋 Récupérer le résumé hebdomadaire
-   */
-  getResumeHebdomadaire: async (): Promise<any> => {
-    const response = await axiosInstance.get('/statistiques/resume-hebdomadaire')  // ✅ Nouveau
-    return response.data
-  },
-
-  /**
-   * ⚧ Distribution par sexe (si disponible dans le backend)
-   */
-  getDistributionSexe: async (maladieId?: number): Promise<DistributionSexe[]> => {
-    // Note: Cet endpoint n'existe pas dans votre backend
-    // Vous devrez soit l'ajouter, soit utiliser les données des cas
-    return []
   },
 }

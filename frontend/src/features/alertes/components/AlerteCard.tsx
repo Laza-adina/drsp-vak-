@@ -1,54 +1,160 @@
-import React from 'react'
-import { Alerte } from '@/types/alertes.types'
-import Card from '@components/common/Card'
-import { formatDate } from '@utils/formatters'
-import { getGraviteColor } from '@utils/helpers'
-import { AlertTriangle, MapPin, Activity } from 'lucide-react'
+// src/components/alertes/AlerteCard.tsx
+import React, { useState } from 'react'
+import { AlertTriangle, MapPin, Calendar, TrendingUp, CheckCircle, Clock, XCircle, Lightbulb } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
+import Card from '@/components/common/Card'
+import { formatDate } from '@/utils/formatters'
+import { alertesService } from '@/api/services/alertes.service'
+import type { Alerte } from '@/types/alertes.types'
 
 interface AlerteCardProps {
   alerte: Alerte
   onClick?: () => void
+  onDelete?: () => void
 }
 
-const AlerteCard: React.FC<AlerteCardProps> = ({ alerte, onClick }) => {
-  const graviteColor = getGraviteColor(alerte.niveau_gravite)
-  const colorClasses = {
-    primary: 'border-primary-500 bg-primary-50',
-    success: 'border-success-500 bg-success-50',
-    warning: 'border-warning-500 bg-warning-50',
-    danger: 'border-danger-500 bg-danger-50',
+const AlerteCard: React.FC<AlerteCardProps> = ({ alerte, onClick, onDelete }) => {
+  const [actionIA, setActionIA] = useState<string | null>(null)
+  const [showActionIA, setShowActionIA] = useState(false)
+
+  const graviteConfig = {
+    critique: { color: 'red', icon: '🔴', bg: 'bg-red-50', border: 'border-red-500' },
+    alerte: { color: 'orange', icon: '🟠', bg: 'bg-orange-50', border: 'border-orange-500' },
+    avertissement: { color: 'yellow', icon: '🟡', bg: 'bg-yellow-50', border: 'border-yellow-500' },
+    info: { color: 'blue', icon: '🔵', bg: 'bg-blue-50', border: 'border-blue-500' },
   }
+
+  const statutConfig = {
+    active: { icon: AlertTriangle, text: 'Active', color: 'text-red-600' },
+    en_cours: { icon: Clock, text: 'En cours', color: 'text-orange-600' },
+    resolue: { icon: CheckCircle, text: 'Résolue', color: 'text-green-600' },
+    fausse_alerte: { icon: XCircle, text: 'Fausse alerte', color: 'text-gray-600' },
+  }
+
+  const config = graviteConfig[alerte.niveau_gravite]
+  const StatutIcon = statutConfig[alerte.statut].icon
+
+  // 🤖 Mutation pour suggérer action IA
+  const suggererActionMutation = useMutation({
+    mutationFn: () => alertesService.suggererActionIA(alerte.id),
+    onSuccess: (data) => {
+      setActionIA(data.action_suggeree)
+      setShowActionIA(true)
+    },
+    onError: () => {
+      setActionIA("Erreur lors de la génération de la suggestion")
+      setShowActionIA(true)
+    },
+  })
 
   return (
     <Card
-      className={`border-l-4 ${colorClasses[graviteColor]} cursor-pointer hover:shadow-lg transition-shadow`}
+      className={`${config.bg} border-l-4 ${config.border} cursor-pointer hover:shadow-lg transition-all`}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <AlertTriangle className={`w-5 h-5 text-${graviteColor}-600`} />
-          <h3 className="font-semibold text-gray-900">{alerte.type_alerte}</h3>
+      {/* En-tête */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg bg-${config.color}-100`}>
+            <AlertTriangle className={`text-${config.color}-600`} size={20} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">{alerte.type_alerte}</h3>
+            <p className="text-sm text-gray-600">{alerte.maladie?.nom}</p>
+          </div>
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium text-${graviteColor}-800 bg-${graviteColor}-100`}
-        >
-          {alerte.niveau_gravite}
+        
+        <span className={`px-3 py-1 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}>
+          {config.icon} {alerte.niveau_gravite}
         </span>
       </div>
 
-      <div className="space-y-2">
+      {/* Informations */}
+      <div className="space-y-2 mb-4">
         <div className="flex items-center text-sm text-gray-600">
-          <Activity className="w-4 h-4 mr-2" />
-          <span>{alerte.maladie_nom}</span>
+          <MapPin size={16} className="mr-2" />
+          <span>{alerte.district?.nom}</span>
         </div>
+        
         <div className="flex items-center text-sm text-gray-600">
-          <MapPin className="w-4 h-4 mr-2" />
-          <span>{alerte.district_nom}</span>
+          <TrendingUp size={16} className="mr-2" />
+          <span className="font-semibold text-gray-900">{alerte.nombre_cas} cas</span>
+          <span className="mx-2">•</span>
+          <span>Seuil: {alerte.seuil_declenche}</span>
         </div>
-        <p className="text-sm text-gray-700 mt-2">{alerte.description}</p>
-        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-          <span className="text-xs text-gray-500">{formatDate(alerte.date_detection)}</span>
-          <span className="text-sm font-medium text-gray-900">{alerte.nombre_cas} cas</span>
+        
+        <div className="flex items-center text-sm text-gray-600">
+          <Calendar size={16} className="mr-2" />
+          <span>Détectée le {formatDate(alerte.date_detection)}</span>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-sm text-gray-700 mb-4 line-clamp-2">
+        {alerte.description}
+      </p>
+
+      {/* 🤖 ACTION IA SUGGÉRÉE */}
+      {showActionIA && actionIA && (
+        <div className="mb-4 p-3 bg-purple-50 border-l-4 border-purple-500 rounded">
+          <div className="flex items-start gap-2">
+            <Lightbulb size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-purple-900 mb-1">🤖 Recommandation IA</p>
+              <p className="text-sm text-purple-800">{actionIA}</p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowActionIA(false)
+              }}
+              className="text-purple-600 hover:text-purple-800"
+            >
+              <XCircle size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex items-center gap-2">
+          <StatutIcon size={16} className={statutConfig[alerte.statut].color} />
+          <span className={`text-sm font-medium ${statutConfig[alerte.statut].color}`}>
+            {statutConfig[alerte.statut].text}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* 🤖 BOUTON IA (visible seulement si alerte active ou en_cours) */}
+          {(alerte.statut === 'active' || alerte.statut === 'en_cours') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                suggererActionMutation.mutate()
+              }}
+              disabled={suggererActionMutation.isPending}
+              className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1 font-medium"
+            >
+              <Lightbulb size={14} />
+              {suggererActionMutation.isPending ? 'Génération...' : 'Action IA'}
+            </button>
+          )}
+
+          {/* Bouton supprimer */}
+          {onDelete && alerte.statut !== 'active' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (window.confirm('Supprimer cette alerte ?')) {
+                  onDelete()
+                }
+              }}
+              className="text-sm text-red-600 hover:text-red-800"
+            >
+              Supprimer
+            </button>
+          )}
         </div>
       </div>
     </Card>

@@ -1,58 +1,39 @@
-/**
- * 📄 Fichier: src/types/alertes.types.ts
- * 📝 Description: Types liés aux alertes épidémiologiques
- * 🎯 Usage: Typage des alertes, notifications, seuils
- */
+export type NiveauAlerte = 'info' | 'avertissement' | 'alerte' | 'critique'
+export type StatutAlerte = 'active' | 'en_cours' | 'resolue' | 'fausse_alerte'
 
-// ========================================
-// 🚨 TYPES ALERTES
-// ========================================
-
-/**
- * Types d'alertes
- */
-export type AlerteType = 'Épidémie' | 'Cluster' | 'Augmentation inhabituelle' | 'Décès multiple'
-
-/**
- * Niveaux de gravité
- */
-export type NiveauGravite = 'Faible' | 'Modéré' | 'Élevé' | 'Critique'
-
-/**
- * Statuts d'alerte
- */
-export type AlerteStatut = 'Active' | 'Résolue' | 'En investigation' | 'Archivée'
-
-/**
- * Structure d'une alerte
- */
 export interface Alerte {
   id: number
+  type_alerte: string
+  niveau_gravite: NiveauAlerte
   maladie_id: number
-  maladie_nom: string
+  maladie?: {
+    id: number
+    nom: string
+  }
   district_id: number
-  district_nom: string
-  type_alerte: AlerteType
-  niveau_gravite: NiveauGravite
+  district?: {
+    id: number
+    nom: string
+  }
   nombre_cas: number
+  seuil_declenche: number
   date_detection: string
   date_resolution?: string
-  statut: AlerteStatut
+  statut: StatutAlerte
   description: string
   actions_recommandees?: string
   responsable?: string
-  date_creation: string
-  utilisateur_id: number
+  interventions_liees?: number[]
+  created_by: number
+  created_at: string
+  updated_at?: string
 }
 
-/**
- * Données pour créer une alerte
- */
-export interface CreateAlerteData {
+export interface AlerteCreateInput {
+  type_alerte: string
+  niveau_gravite: NiveauAlerte
   maladie_id: number
   district_id: number
-  type_alerte: AlerteType
-  niveau_gravite: NiveauGravite
   nombre_cas: number
   date_detection: string
   description: string
@@ -60,12 +41,18 @@ export interface CreateAlerteData {
   responsable?: string
 }
 
-/**
- * Seuil d'alerte pour une maladie
- */
-export interface SeuilAlerte {
-  maladie_id: number
-  seuil_cas: number
-  periode_jours: number
-  niveau_gravite: NiveauGravite
+export interface AlerteUpdateInput {
+  statut?: StatutAlerte
+  actions_recommandees?: string
+  responsable?: string
+  date_resolution?: string
+}
+
+export interface AlerteFilters {
+  statut?: StatutAlerte
+  niveau_gravite?: NiveauAlerte
+  maladie_id?: number
+  district_id?: number
+  date_debut?: string
+  date_fin?: string
 }

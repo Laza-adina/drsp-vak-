@@ -46,12 +46,13 @@ class AlerteStatut(str, Enum):
 
 
 class TypeIntervention(str, Enum):
-    INVESTIGATION = "investigation"
     VACCINATION = "vaccination"
-    DESINFECTION = "desinfection"
     SENSIBILISATION = "sensibilisation"
-    TRAITEMENT = "traitement"
-    QUARANTAINE = "quarantaine"
+    DESINFECTION = "desinfection"
+    DISTRIBUTION_MEDICAMENTS = "distribution_medicaments"
+    FORMATION_PERSONNEL = "formation_personnel"
+    ENQUETE_TERRAIN = "enquete_terrain"
+    AUTRE = "autre"
 
 
 class InterventionStatut(str, Enum):

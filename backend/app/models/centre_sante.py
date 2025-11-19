@@ -25,3 +25,4 @@ class CentreSante(Base):
     district = relationship("District", back_populates="centres_sante")
     users = relationship("User", back_populates="centre_sante")
     cas = relationship("Cas", back_populates="centre_sante")
+    interventions = relationship("Intervention", back_populates="centre_sante")
